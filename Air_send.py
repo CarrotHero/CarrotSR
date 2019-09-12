@@ -1,4 +1,3 @@
-#on sub01
 import RPi.GPIO as GPIO
 import time
 import socket
@@ -53,18 +52,21 @@ def readadc(adcnum, clockpin, mosipin, misopin, cspin):
     GPIO.output(cspin, GPIO.HIGH)
     return adcout
 
+count = 0
+vol = 0
 with closing(sock):
     try:
         while True:
-            time.sleep(0.5)
+            time.sleep(0.01)
             inputVal0 = readadc(0, spi_clk, spi_mosi, spi_miso , spi_cs)
-            vol = inputVal0
-            if inputVal0 < 2117:
-                vol = 2117 + ( 2117 - inputVal0)
-            elif vol > 4095:
-                vol = 4095
-            send_vol = struct.pack('>d', vol)
-            sock.sendto(send_vol, (host, port))
+            count += 1
+            vol += inputVal0
+            if count >= 10:
+                vol = 4096 - (vol / 10)
+                send_vol = struct.pack('>d', vol)
+                sock.sendto(send_vol, (host, port))
+                count = 0
+                vol = 0
 
     except KeyboardInterrupt:
         pass
